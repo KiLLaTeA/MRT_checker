@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!-- Надпись сверху -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:padding="16dp"
+        android:background="@color/colorAccent"
+        android:visibility="gone"
+        android:layout_alignParentTop="true" />
+
+    <!-- ImageView для отображения изображения -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/buttonContainer"
+        android:scaleType="centerCrop"
+        android:src="@drawable/mrt"
+        style="@style/CustomImageViewStyle" />
+
+    <!-- Контейнер для кнопок -->
+    <LinearLayout
+        android:id="@+id/buttonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="170dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@color/colorPrimaryDark">
+
+        <!-- Кнопка "Сделать фото" -->
+        <Button
+            android:id="@+id/btnCapture"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:text="Сделать фото"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:padding="8dp"
+            style="@style/CustomButtonStyle" />
+
+        <!-- Кнопка "Открыть галерею" (изначально скрыта) -->
+        <Button
+            android:id="@+id/btnOpenGallery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Открыть галерею"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:padding="8dp"
+            android:visibility="gone"
+            style="@style/CustomButtonStyle" />
+
+        <!-- Кнопка "Загрузить" (изначально скрыта) -->
+        <Button
+            android:id="@+id/btnUpload"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Отправить"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:padding="8dp"
+            android:visibility="gone"
+            style="@style/CustomButtonStyle" />
+
+
+    </LinearLayout>
+</RelativeLayout>
