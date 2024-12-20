@@ -3,7 +3,6 @@ package com.example.mrt_checker;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -12,7 +11,6 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageView;
     private Button btnCapture, btnUpload, btnOpenGallery;
     private TextView textView;
-    private LinearLayout buttonContainer;
+
+    private String class_name_yolo = "";
 
 
     @Override
@@ -49,15 +48,11 @@ public class MainActivity extends AppCompatActivity {
         imageView = findViewById(R.id.imageView);
         textView = findViewById(R.id.textView);
 
-        // Инициализация кнопок и ImageView
         btnCapture = findViewById(R.id.btnCapture);
         btnUpload = findViewById(R.id.btnUpload);
         btnOpenGallery = findViewById(R.id.btnOpenGallery);
         imageView = findViewById(R.id.imageView);
 
-        buttonContainer = findViewById(R.id.buttonContainer);
-
-        // Установка слушателей на кнопки
         btnCapture.setOnClickListener(v -> dispatchTakePictureIntent());
         btnUpload.setOnClickListener(v -> uploadImage());
         btnOpenGallery.setOnClickListener(v -> openGallery());
@@ -102,6 +97,8 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         processedBase64Image = jsonResponse.getString("image");
                         textView.setText(jsonResponse.getString("text") + jsonResponse.getString("class"));
+                        class_name_yolo = jsonResponse.getString("class");
+
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
@@ -110,9 +107,8 @@ public class MainActivity extends AppCompatActivity {
                     imageView.setImageBitmap(processedBitmap);
                     imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
-                    // После получения изображения:
-                    btnCapture.setText("Сделать новое фото"); // Изменяем текст кнопки
-                    btnOpenGallery.setVisibility(View.VISIBLE); // Показываем кнопку "Открыть галерею"
+                    btnCapture.setText("Сделать новое фото");
+                    btnOpenGallery.setVisibility(View.VISIBLE);
                     textView.setVisibility(View.VISIBLE);
                     if (textView.getText().toString().equals("Ничего не найдено!")){
                         btnUpload.setVisibility(View.INVISIBLE);
@@ -126,6 +122,9 @@ public class MainActivity extends AppCompatActivity {
 
                     btnCapture.getLayoutParams().height = heightInPx;
                     btnCapture.requestLayout();
+
+                    btnOpenGallery.getLayoutParams().height = heightInPx;
+                    btnOpenGallery.requestLayout();
                 },
                 error -> {
                     Log.d("Base64", "Original Base64: " + base64Image);
@@ -142,8 +141,28 @@ public class MainActivity extends AppCompatActivity {
         queue.add(stringRequest);
     }
 
+    private Bitmap resizeImage(Bitmap originalBitmap, int maxWidth, int maxHeight) {
+        int width = originalBitmap.getWidth();
+        int height = originalBitmap.getHeight();
+
+        if (width <= maxWidth && height <= maxHeight) {
+            return originalBitmap;
+        }
+
+        float ratio = (float) width / height;
+        if (ratio > 1) {
+            width = maxWidth;
+            height = (int) (width / ratio);
+        } else {
+            height = maxHeight;
+            width = (int) (height * ratio);
+        }
+
+        return Bitmap.createScaledBitmap(originalBitmap, width, height, true);
+    }
+
     private void sendImageToGallery(String base64Image) {
-        String url = "http://192.168.0.166:5000/api/upload"; // Замените на ваш URL сервера
+        String url = "http://192.168.0.166:5000/api/upload";
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 response -> {
                     JSONObject jsonResponse = null;
@@ -153,19 +172,23 @@ public class MainActivity extends AppCompatActivity {
                         throw new RuntimeException(e);
                     }
                     try {
-                        textView.setText(jsonResponse.getString("message"));
+                        Toast.makeText(this, jsonResponse.getString("message"), Toast.LENGTH_SHORT).show();
                         imageView.setImageResource(R.drawable.mrt);
                         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
                         btnUpload.setVisibility(View.INVISIBLE);
-                        btnOpenGallery.setVisibility(View.INVISIBLE);
+                        btnOpenGallery.setVisibility(View.VISIBLE);
                         textView.setVisibility(View.INVISIBLE);
 
-                        float heightInDp = 150f;
+                        float heightInDp = 75f;
                         int heightInPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, heightInDp, getResources().getDisplayMetrics());
 
                         btnCapture.getLayoutParams().height = heightInPx;
                         btnCapture.requestLayout();
+
+                        btnOpenGallery.getLayoutParams().height = heightInPx;
+                        btnOpenGallery.requestLayout();
+
                         btnCapture.setText("Сделать фото");
 
                     } catch (JSONException e) {
@@ -173,14 +196,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 },
                 error -> {
-                    // Обработка ошибки
                     Toast.makeText(this, "Ошибка: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                 }) {
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
                 params.put("image", base64Image);
-                params.put("class", "nothing");
+                params.put("class", class_name_yolo);
                 return params;
             }
         };
@@ -196,17 +218,18 @@ public class MainActivity extends AppCompatActivity {
     private void uploadImage() {
         imageView.setDrawingCacheEnabled(true);
         Bitmap bitmap = imageView.getDrawingCache();
-        String base64Image = bitmapToBase64(bitmap);
 
-        // Отправляем изображение на сервер
+        Bitmap resizedBitmap = resizeImage(bitmap, 800, 600);
+        String base64Image = bitmapToBase64(resizedBitmap);
+
         sendImageToGallery(base64Image);
         Toast.makeText(this, "Изображение загружено", Toast.LENGTH_SHORT).show();
     }
 
     private void openGallery() {
-        String url = "http://192.168.0.166:5000/gallery";
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        Intent intent = new Intent(MainActivity.this, Gallery.class);
         startActivity(intent);
+
         Toast.makeText(this, "Открытие галереи", Toast.LENGTH_SHORT).show();
     }
 }
